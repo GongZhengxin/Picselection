@@ -1,5 +1,6 @@
 import os
 import cv2
+from random import shuffle
 import numpy as np
 import pandas as pd
 
@@ -138,9 +139,11 @@ try:
                 # create range
                 q1, q2 = int((percent - 0.25) * pic_num), int(percent * pic_num)
                 # random choose the top range pics
-                selection = np.random.permutation(np.linspace(q1, q2, q2 - q1, endpoint=False))[:select_num]
-                selection = selection.astype(np.int8)
-                selected_image.extend(list(selection))
+                selection = [i for i in range(q1, q2)]
+                shuffle(selection)
+                # selection = np.random.permutation(np.linspace(q1, q2, q2 - q1, endpoint=False))[:select_num]
+                # selection = selection.astype(np.int8)
+                selected_image.extend(selection[:select_num])
             # get the path
             final_selection = sorted_image_list[selected_image]
             # create selected .txt
