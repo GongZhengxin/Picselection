@@ -405,8 +405,6 @@ with open('selectedImages.pkl', 'wb') as f:
 
 
 # =============resize=============
-
-
 class trash_code():
     # print('+==========+============+============+============+====================+') print('|class num |wh num,
     # ratio|sm num,ratio|&& num,ratio| name               |') print(
@@ -516,38 +514,55 @@ def visualize_hist(sample, arr_active, arr_ratio, arr_xs, arr_ys, notation='none
 
 # =============substitute=============
 # collecting
-main_fold = 'out'
+fold = 'out'
 substitude_dict = dict()
 for i in range(1000):
     substitude_dict[i] = list()
 
-for sub in range(20):
-    fold_name = 'sub'+str(sub)
-    for session in range(4):
-        file_name = 'expImage_' + fold_name + '_session' + str(session) + '.txt'
-        with open(pjoin(main_fold, fold_name, file_name)) as f:
-            records = f.readlines()
-            for i in range(len(records)):
-                record = records[i].replace('\n', '').split('\t')
-                if record[-2] == 0:
-                    index = get_index(record[-1].split('/')[0])
-                    substitude_dict[index].append(record[-1])
+for sub in range(100):
+    file_name = 'result'+str(sub*10)+'.txt'
+    with open(pjoin(fold, file_name)) as f:
+        records = f.readlines()
+        for i in range(len(records)):
+            record = records[i].replace('\n', '').replace('SelectedImages/', '')
+            if record[-2] == 0:
+                index = get_index(record[-1].split('/')[0])
+                substitude_dict[index].append(record[-1])
 
 with open('selectedImages.pkl', 'rb') as f:
     selected_images = pickle.load(f)
 
-for index in range(1000):
+# ===========================replace low resolution=========================
+if not os.path.exists('Substitute'):
+    os.mkdir('Substitute')
+exclusion = np.load('exclusion.npy', allow_pickle=True)
+for index in range(1, 1000):
     filename = get_name(index, '.csv')
     df = pd.read_csv(pjoin('FilteredStimFiles', filename))
     stim_set = set(np.array(df['path']).astype(np.str)) - set(selected_images[index]['sample'])
-
-
-
+    stim_list = list(stim_set)
+    waitlist = exclusion[index]
+    if len(waitlist):
+        replacelist = np.random.choice(stim_list, len(waitlist), replace=False)
+        for i in range(len(waitlist)):
+            if os.path.exists(pjoin('SelectedImages', waitlist[i])):
+                os.remove(pjoin('SelectedImages', waitlist[i]))
+            image = replacelist[i]
+            old_file_path = pjoin('/nfs/e3/ImgDatabase/ImageNet_2012/ILSVRC2012_img_train', image)
+            img = Image.open(old_file_path)
+            img = img.resize((375, 375))
+            fold, file = image.split('/')
+            if not os.path.exists(pjoin('Substitute', fold)):
+                os.mkdir(pjoin('Substitute', fold))
+            img.save(pjoin('SelectedImages', image))
+            img.save(pjoin('Substitute', image))
+            selected_images[index]['sample'] = np.append(selected_images[index]['sample'], image)
 
 
 # dir_list = os.listdir('SelectedImgaes')
 # for fold in dir_list:
 #     index = get_index(fold)
 #     selected_images[index]
+
 
 
